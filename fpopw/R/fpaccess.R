@@ -47,12 +47,15 @@ retour_sn <- function(path){
 #' @param lambda the penalty per changepoint (see Maidstone et al. 2016) 
 #' @param mini minimum mean segment value to consider in the optimisation.
 #' @param maxi maximum mean segment value to consider in the optimisation.
+#' @param verbose_file name of text file to use for output of candidate change-points considered at each iteration of dynamic programming, or "" for no output (default).
 #' @return return a list with a vector t.est containing the position of the change-points, the number of changes K and, the cost J.est.
 #' @examples 
 #' x <- c(rnorm(100), rnorm(10^3)+2, rnorm(1000)+1)
 #' est.sd <- sdDiff(x) ## rough estimate of std-deviation
 #' res <- Fpop(x=x,lambda=2*est.sd^2*log(length(x)))
 #' smt <- getSMT(res)
+#' vres <- Fpop(x=x,lambda=2*est.sd^2*log(length(x)),verbose_file=tempfile())
+#' vres$model
 #' @export
 Fpop <- function(x, lambda, mini=min(x), maxi=max(x), verbose_file=""){
   n <- length(x)
