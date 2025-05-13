@@ -1,11 +1,12 @@
 Package: fpopw
-Version: 1.1
-Date: 2022-05-30
+Version: 1.2
 Title: Weighted Segmentation using Functional Pruning and Optimal Partioning
-Authors@R: c(person("Guillem", "Rigaill", role = c("aut", "cre"),
-                     email = "guillem.rigaill@inrae.fr"))
+Authors@R: c(
+  person("Guillem", "Rigaill", role = c("aut", "cre"), email = "guillem.rigaill@inrae.fr"),
+  person("Toby", "Hocking", role = c("ctb"), email="toby.hocking@r-project.org", comment = c(ORCID="0000-0002-3146-0865"))
+  )
 Depends: R (>= 3.1.0)
-Suggests: 
+Suggests: testthat, data.table
 Description: Weighted-L2 FPOP Maidstone et al. (2017) <doi:10.1007/s11222-016-9636-3> and pDPA/FPSN Rigaill (2010) <arXiv:1004.0887> algorithm for detecting multiple changepoints in the mean of a vector. Also includes a few model selection functions using Lebarbier (2005) <doi:10.1016/j.sigpro.2004.11.012> and the 'capsushe' package.
 License: GPL (>= 3)
 RoxygenNote: 7.3.2

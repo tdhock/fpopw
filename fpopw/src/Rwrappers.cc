@@ -6,8 +6,9 @@
 // this function is visible by R
 extern "C" {
 void colibri_op_R_c (double *profil, int *nbi, double *lambda_, double *mini, double *maxi, int *origine,
-double *cout_n){
-    colibri_op_c (profil, nbi, lambda_, mini, maxi, origine, cout_n);
+double *cout_n
+		     ,char **verbose_file){
+  colibri_op_c (profil, nbi, lambda_, mini, maxi, origine, cout_n, verbose_file);
   }
 
 void colibri_op_weights_R_c (double *profil, double *weights, int *nbi, double *lambda_, double *mini, double *maxi, int *origine,

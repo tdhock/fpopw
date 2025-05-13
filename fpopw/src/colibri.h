@@ -2,7 +2,8 @@
 
 
 void colibri_op_c (const double *profil, const int *nbi, const double *lambda_, const double *mini, const double *maxi, int *origine,
-double *cout_n);
+double *cout_n
+		   ,char **verbose_file);
 
 void colibri_op_weight_c (const double *profil, double *weights, const int *nbi, const double *lambda_, const double *mini, const double *maxi, int *origine,
 double *cout_n);

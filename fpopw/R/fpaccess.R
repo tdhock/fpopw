@@ -54,15 +54,23 @@ retour_sn <- function(path){
 #' res <- Fpop(x=x,lambda=2*est.sd^2*log(length(x)))
 #' smt <- getSMT(res)
 #' @export
-Fpop <- function(x, lambda, mini=min(x), maxi=max(x)){
+Fpop <- function(x, lambda, mini=min(x), maxi=max(x), verbose_file=""){
   n <- length(x)
   A <- .C("colibri_op_R_c", signal=as.double(x), n=as.integer(n), 
 		lambda=as.double(lambda),   min=as.double(mini), 
 		max=as.double(maxi), path=integer(n), cost=double(n)
-	, PACKAGE="fpopw")
+          , verbose_file=verbose_file
+       , PACKAGE="fpopw")
+  if(file.exists(verbose_file)){
+    if(requireNamespace("data.table")){
+      A$model <- data.table::fread(verbose_file)
+    }else{
+      warning("run install.packages('data.table') to read verbose output")
+    }
+  }
     A$t.est <- retour_op(A$path, n)
     A$K <- length(A$t.est)
-    A$J.est <- A$cost[n] - (A$K+1)*lambda + sum((x^2))
+    A$J.est <- A$cost[n] - A$K*lambda + sum(x^2)
     A$weights <- NULL ## used to compute the smt profile
     A$method <- "Fpop"
     return(A);	

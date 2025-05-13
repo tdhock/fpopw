@@ -1,4 +1,5 @@
-
+#include "string.h"
+#include <fstream>
 #include "colibri.h"
 // op +fp version for the L2 loss
 // profil: represent a vector (double) of length nbi
@@ -7,7 +8,8 @@
 // origine : will be updated by the function and contain at index i the position of the last breakpoint of the best segmentation arriving at position 
 // cout_n will be updated by the function and contain at index i the cost of the best segmentation arriving at position i
 void colibri_op_c (const double *profil, const int *nbi, const double *lambda_, const double *mini, const double *maxi, int *origine,
-double *cout_n)
+double *cout_n
+		   ,char **verbose_file_ptr)
 {
 	int nb=*nbi;
 	double lambda = *lambda_;
@@ -16,40 +18,45 @@ double *cout_n)
 
 	int minPosition=-1;
 	double minCurrent=-10.0;
-	
+	Polynome2 **stock= new Polynome2* [nb];
+	for ( int t =0; t < nb; t++ ) stock[t]= new Polynome2();
         /* Initialisation of object once and for all */
 	//Polynome2 * p1;
 	Liste * l1;  
 	//Polynome2 * pTest;
+	l1 = new Liste(max, min, stock[0]);
+	// TODO did you forget a delete here?
 
-	Polynome2 **stock= new Polynome2* [nb]; 
-	for ( int t =0; t < nb; t++ ) stock[t]= new Polynome2();
-		
+	char *verbose_file = verbose_file_ptr[0];
+	std::ofstream verbose_fstream;
+	bool verbose = strcmp(verbose_file, "") != 0;
+	if(verbose){
+	  verbose_fstream.open(verbose_file);
+	  verbose_fstream << "data_i" << "\t" << "cost" << "\t" << "change_i" << "\n";
+	}
+
          
 	/* Parametrization of the first candidate segmentation (i.e 1 segment from ]0, 1] the min cost is (0 + lambda)  */
-	stock[0]->reset(1.0, -2*profil[0], lambda,  -10);
+	stock[0]->reset(1.0, -2*profil[0], 0,  -10);
 	stock[0]->setStatus(2);
 	
-	l1 = new Liste(max, min, stock[0]);
 
-	l1->computeMinOrMax(&minCurrent, &minPosition);
-	cout_n[0] = minCurrent + lambda;
-	origine[0] = minPosition;
         /* For any new data point t do 1), 2) and 3) */
-	for ( int t =1; t < nb; t++ ){
+	for ( int t =0; t < nb; t++ ){
         	 /* Slide 1 and Prune */
+	  if(t>=1){
 		 l1->computeRoots(cout_n[t-1]);
 		 stock[t]->reset(0.0, 0.0, cout_n[t-1],  t);
 		 l1->resetAllBorders(stock[t]);
 		 l1->checkForDoublon();
 		 l1->add(1.0, -2*profil[t], 0.0);
-
+	  }
 		 /* Compute Min */
-		 l1->computeMinOrMax(&minCurrent, &minPosition);
+	  l1->computeMinOrMax(&minCurrent, &minPosition, t, verbose_fstream);
 		 cout_n[t]=minCurrent + lambda;
 		 origine[t] = minPosition;	
 	}
-	  
+	verbose_fstream.close();
 	/* free stock */
 	for ( int t =0; t < nb; t++ ) delete(stock[t]);
 	delete[] stock;  
@@ -58,6 +65,7 @@ double *cout_n)
 void colibri_op_weight_c (const double *profil, double *weights, const int *nbi, const double *lambda_, const double *mini, const double *maxi, int *origine,
 double *cout_n)
 {
+	std::ofstream verbose_fstream;
 	int nb=*nbi;
 	double lambda = *lambda_;
 	double min=*mini;
@@ -81,20 +89,19 @@ double *cout_n)
 	
 	l1 = new Liste(max, min, stock[0]);
 
-	l1->computeMinOrMax(&minCurrent, &minPosition);
-	cout_n[0] = minCurrent + lambda;
-	origine[0] = minPosition;
         /* For any new data point t do 1), 2) and 3) */
-	for ( int t =1; t < nb; t++ ){
+	for ( int t =0; t < nb; t++ ){
+	  if(t>=1){
         	 /* Slide 1 and Prune */
 		 l1->computeRoots(cout_n[t-1]);
 		 stock[t]->reset(0.0, 0.0, cout_n[t-1],  t);
 		 l1->resetAllBorders(stock[t]);
 		 l1->checkForDoublon();
 		 l1->add(weights[t], -2*profil[t]*weights[t], 0.0);
+	  }
 
 		 /* Compute Min */
-		 l1->computeMinOrMax(&minCurrent, &minPosition);
+	  l1->computeMinOrMax(&minCurrent, &minPosition, t, verbose_fstream);
 		 cout_n[t]=minCurrent + lambda;
 		 origine[t] = minPosition;	
 	}
@@ -110,6 +117,7 @@ double *cout_n)
 void colibri_sn_c (const double *profil, const int *nbi, const int *Kmaxi, const double *mini, const double *maxi, int *origine,
 double *cout_n, double *allCost)
 {
+	std::ofstream verbose_fstream;
 	int nb=*nbi;
 	int Kmax=*Kmaxi;
 	double min=*mini;
@@ -168,7 +176,7 @@ double *cout_n, double *allCost)
 	  stock[i]->setStatus(2);
 	  l1 = new Liste(max, min, stock[i]);
 	  /* Min */
-	  l1->computeMinOrMax(&minCurrent, &minPosition);
+	  l1->computeMinOrMax(&minCurrent, &minPosition, i, verbose_fstream);
 	  minCostCurrent[i]=minCurrent;
 	  origine[i2] = i;
 	  allCost[i2] = minCurrent;
@@ -186,7 +194,7 @@ double *cout_n, double *allCost)
 		 l1->add(1.0, -2*profil[i], profil[i]*profil[i]);
 
 		 /* Compute Min */
-		 l1->computeMinOrMax(&minCurrent, &minPosition);
+		 l1->computeMinOrMax(&minCurrent, &minPosition, i, verbose_fstream);
 		 minCostCurrent[i]=minCurrent;
 		 origine[i2] = minPosition;
 		 allCost[i2] = minCurrent;
@@ -235,6 +243,7 @@ double *cout_n, double *allCost)
 void colibri_sn_weight_c (const double *profil, double *weights, const int *nbi, const int *Kmaxi, const double *mini, const double *maxi, int *origine,
 double *cout_n, double *allCost)
 {
+	std::ofstream verbose_fstream;
 	int nb=*nbi;
 	int Kmax=*Kmaxi;
 	double min=*mini;
@@ -296,7 +305,7 @@ double *cout_n, double *allCost)
 	  stock[i]->setStatus(2);
 	  l1 = new Liste(max, min, stock[i]);
 	  /* Min */
-	  l1->computeMinOrMax(&minCurrent, &minPosition);
+	  l1->computeMinOrMax(&minCurrent, &minPosition, i, verbose_fstream);
 	  minCostCurrent[i]=minCurrent;
 	  origine[i2] = i;
 	  allCost[i2] = minCurrent;
@@ -314,7 +323,7 @@ double *cout_n, double *allCost)
 		 l1->add(weights[i], -2*weights[i]*profil[i], weights[i]*profil[i]*profil[i]);
 
 		 /* Compute Min */
-		 l1->computeMinOrMax(&minCurrent, &minPosition);
+		 l1->computeMinOrMax(&minCurrent, &minPosition, i, verbose_fstream);
 		 minCostCurrent[i]=minCurrent;
 		 origine[i2] = minPosition;
 		 allCost[i2] = minCurrent;
@@ -364,6 +373,7 @@ double *cout_n, double *allCost)
 
 void colibri_sn_weight_nomemory_c (const double *profil, double *weights, const int *nbi, const int *Kmaxi, const double *mini, const double *maxi, double *cout_n) //, double *allCost)
 {
+	std::ofstream verbose_fstream;
 	int nb=*nbi;
 	int Kmax=*Kmaxi;
 	double min=*mini;
@@ -425,7 +435,7 @@ void colibri_sn_weight_nomemory_c (const double *profil, double *weights, const 
 	  stock[i]->setStatus(2);
 	  l1 = new Liste(max, min, stock[i]);
 	  /* Min */
-	  l1->computeMinOrMax(&minCurrent, &minPosition);
+	  l1->computeMinOrMax(&minCurrent, &minPosition, i, verbose_fstream);
 	  minCostCurrent[i]=minCurrent;
 	  //origine[i2] = i;
 	  //allCost[i2] = minCurrent;
@@ -443,7 +453,7 @@ void colibri_sn_weight_nomemory_c (const double *profil, double *weights, const 
 		 l1->add(weights[i], -2*weights[i]*profil[i], weights[i]*profil[i]*profil[i]);
 
 		 /* Compute Min */
-		 l1->computeMinOrMax(&minCurrent, &minPosition);
+		 l1->computeMinOrMax(&minCurrent, &minPosition, i, verbose_fstream);
 		 minCostCurrent[i]=minCurrent;
 		 //origine[i2] = minPosition;
 		 //allCost[i2] = minCurrent;

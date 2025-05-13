@@ -2,6 +2,7 @@
 #ifndef LISTEH
 #define LISTEH
 #include "polynome2.h"
+#include <fstream>
 
 
 class Liste {
@@ -9,7 +10,6 @@ private:
   double max, min;
   Liste *next;
   Polynome2 *poly;
-  
 public:
   /* constructors and destructors */
   Liste()
@@ -63,7 +63,7 @@ public:
   inline
   void add(double, double, double);
   inline
-  void computeMinOrMax(double*, int*);
+  void computeMinOrMax(double*, int*, int, std::ofstream&);
   void resetMaillonBorders(Polynome2*);
   void resetAllBorders(Polynome2*);
 };
@@ -191,7 +191,7 @@ void Liste::add(double a2_, double a1_, double a0_)
       l=l->getNext();
     }
 }
-void Liste::computeMinOrMax(double * min, int * which)
+void Liste::computeMinOrMax(double * min, int * which, int t, std::ofstream &verbose_fstream)
 {
   Liste *l;
   double tmp = INFINITY;
@@ -201,6 +201,9 @@ void Liste::computeMinOrMax(double * min, int * which)
   while(l != NULL)
     {
       l->getPolynome()->minOrMax(min, &tmp, which);
+      if(verbose_fstream.is_open()){
+	verbose_fstream << t << "\t" << *min << "\t" << l->getPolynome()->getOrigine() << "\n";
+      }
       l=l->getNext();
     }
 }
